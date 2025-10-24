@@ -1,0 +1,56 @@
+{
+  "name": "struct-to-docx",
+  "type": "module",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Generate .docx file from struct description. Support for Browser and Node.js",
+  "author": "cshaptx4869",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cshaptx4869/struct-to-docx.git"
+  },
+  "keywords": [
+    "docx.js",
+    "docx",
+    "builder",
+    "docx-builder",
+    "template",
+    "docx-template"
+  ],
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
+  "browser": "dist/index.umd.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "lint": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "docx": "^9.5.1"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^6.0.0",
+    "@rollup/plugin-commonjs": "^28.0.8",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "eslint": "^9.38.0",
+    "eslint-plugin-format": "^1.0.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "rollup": "^4.52.5",
+    "typescript": "^5.9.3"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  }
+}
