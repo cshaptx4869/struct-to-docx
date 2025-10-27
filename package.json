@@ -1,7 +1,7 @@
 {
   "name": "struct-to-docx",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "Generate .docx file from struct description. Support for Browser and Node.js",
   "author": "cshaptx4869",
@@ -10,12 +10,23 @@
     "type": "git",
     "url": "https://github.com/cshaptx4869/struct-to-docx.git"
   },
-  "keywords": ["docx.js", "docx", "builder", "docx-builder", "template", "docx-template"],
+  "keywords": [
+    "docx.js",
+    "docx",
+    "builder",
+    "docx-builder",
+    "template",
+    "docx-template"
+  ],
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.umd.js",
   "types": "dist/types/index.d.ts",
-  "files": ["LICENSE", "README.md", "dist"],
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
   "scripts": {
     "build": "rollup -c",
     "clean": "rm -rf dist",
