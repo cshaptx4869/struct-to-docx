@@ -2536,6 +2536,7 @@
         }
         const formData = new FormData(formEl)
         const data = Object.fromEntries(formData.entries())
+
         // export docx
         const docxBuilder = new DocxBuilder()
         const doc = docxBuilder
@@ -2547,6 +2548,7 @@
           .setDefaultFontSize(8)
           .addSection(template)
           .render(data)
+
         Packer.toBlob(doc).then((blob) => {
           const a = document.createElement("a")
           a.href = URL.createObjectURL(blob)

@@ -176,7 +176,7 @@ export class DocxBuilder {
           const { type, options } = optionItem
           if (type === "text") { // 文本类型
             let value = options.text ?? "" // 默认值，文本值
-            const field = options.htmlConfig?.field // 字段，用于从数据对象中获取值来替换默认值
+            const field = options.field ?? options.htmlConfig?.field // 字段，用于从数据对象中获取值来替换默认值
             // 赋值
             if (data && field) {
               if (data[field] !== undefined) {
@@ -448,20 +448,51 @@ export class DocxBuilder {
 
   /**
    * 从URL获取文件的ArrayBuffer
-   * @param url 文件URL
+   * @param urlStr 文件URL
    * @returns 文件的ArrayBuffer
    */
-  static async fetchUrlFile(url: string) {
-    try {
-      const response = await fetch(url)
+  static async fetchUrlFile(urlStr: string) {
+    const url = new URL(urlStr)
+
+    if (typeof fetch !== "undefined") {
+      // 优先使用 fetch
+      const response = await fetch(urlStr)
       if (!response.ok) {
-        throw new Error(`Failed to fetch ${url}, status code: ${response.status}`)
+        throw new Error(`Failed to fetch ${urlStr}, status code: ${response.status}`)
       }
-      return response.arrayBuffer()
+      return await response.arrayBuffer()
     }
-    catch (error: any) {
-      throw new Error(`Error fetching ${url}: ${error.message}`)
-    }
+
+    // Node.js 回退
+    const http = url.protocol === "https:" ? await import("node:https") : await import("node:http")
+
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+      const request = http.get(urlStr, (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`Failed to fetch ${urlStr}, status code: ${response.statusCode}`))
+          response.resume()
+          return
+        }
+
+        const chunks: Uint8Array[] = []
+        response.on("data", (chunk: Uint8Array) => chunks.push(chunk))
+        response.on("end", async () => {
+          const { Buffer } = await import("node:buffer")
+          // 合并所有 chunk 成一个 Buffer
+          const buffer = Buffer.concat(chunks)
+          // 转换为 ArrayBuffer（安全切片）
+          const arrayBuffer = buffer.buffer.slice(
+            buffer.byteOffset,
+            buffer.byteOffset + buffer.byteLength,
+          )
+          resolve(arrayBuffer)
+        })
+      })
+
+      request.on("error", reject)
+      request.on("timeout", () => request.destroy())
+      request.setTimeout(30_000) // 30秒超时
+    })
   }
 
   /**
@@ -614,6 +645,7 @@ interface ITextType {
   options: ITextTypeOptions
 }
 type ITextTypeOptions = IRunOptions & {
+  field?: string
   htmlConfig?: IHtmlConfig
 }
 interface IHtmlConfig {

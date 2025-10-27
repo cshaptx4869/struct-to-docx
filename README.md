@@ -45,4 +45,4 @@ function generateDocx() {
 <style lang="scss" scoped></style>
 ```
 
-> 详细示例参考 test 目录下的 [index.html](https://github.com/cshaptx4869/struct-to-docx/blob/main/test/index.html)
+> 详细示例参考 test 目录下的 [test.html](https://github.com/cshaptx4869/struct-to-docx/blob/main/test/test.html)
