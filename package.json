@@ -8,7 +8,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cshaptx4869/struct-to-docx.git"
+    "url": "git+https://github.com/cshaptx4869/struct-to-docx.git"
   },
   "keywords": [
     "docx.js",
@@ -23,17 +23,19 @@
   "browser": "dist/index.umd.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "LICENSE",
-    "README.md",
+    "CHANGELOG.md",
     "dist"
   ],
   "scripts": {
     "build": "rollup -c",
     "clean": "rm -rf dist",
-    "prepublishOnly": "npm run clean && npm run build",
+    "prepublish": "npm run clean && npm run build",
     "lint": "eslint . --fix",
     "type-check": "tsc --noEmit",
     "test": "node test/test.js",
+    "release:patch": "npm version patch -m \"chore(release): %s\"",
+    "release:minor": "npm version minor -m \"feat(release): %s\"",
+    "release:major": "npm version major -m \"feat(release)! : breaking change %s\"",
     "prepare": "husky"
   },
   "dependencies": {
@@ -51,5 +53,9 @@
     "lint-staged": "^16.2.6",
     "rollup": "^4.52.5",
     "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }
