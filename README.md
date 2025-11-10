@@ -46,3 +46,7 @@ function generateDocx() {
 ```
 
 > 详细示例参考 test 目录下的 [test.html](https://github.com/cshaptx4869/struct-to-docx/blob/main/test/test.html)
+
+![renderHtml](./test/assets/html.png)
+
+![renderDocx](./test/assets/docx.png)
