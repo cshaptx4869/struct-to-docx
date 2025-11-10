@@ -1423,9 +1423,18 @@ const template = {
                         {
                           type: "text",
                           options: {
-                            text: "g/m2",
+                            text: "g/m",
                             font: "Arial",
                             break: 0,
+                          },
+                        },
+                        {
+                          type: "text",
+                          options: {
+                            text: "2",
+                            font: "Arial",
+                            break: 0,
+                            superScript: true,
                           },
                         },
                       ],

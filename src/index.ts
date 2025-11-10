@@ -200,16 +200,24 @@ export class DocxBuilder {
                 }
               }
             }
-            // 处理换行符
-            value.split("\n").forEach((line, lineIndex) => {
-              const text = new TextRun({
-                ...options,
-                text: line,
-                font: options.font || this.defaultFont,
-                size: options.size || DocxBuilder.textSize(this.defaultFontSize),
-                break: options.break || (lineIndex === 0 ? 0 : 1),
+            // 处理文本
+            value !== "" && this.parseText(value).forEach((line, lineIndex) => {
+              line.forEach((item, itemIndex) => {
+                const text = new TextRun({
+                  ...options,
+                  text: item.value,
+                  font: options.font ?? this.defaultFont,
+                  size: options.size ?? DocxBuilder.textSize(this.defaultFontSize),
+                  bold: options.bold ?? (item.type === "strong" || item.type === "b"),
+                  italics: options.italics ?? (item.type === "em" || item.type === "i"),
+                  underline: options.underline ?? (item.type === "u" ? { type: "single" } : undefined),
+                  strike: options.strike ?? (item.type === "del" || item.type === "s"),
+                  subScript: options.subScript ?? (item.type === "sub"),
+                  superScript: options.superScript ?? (item.type === "sup"),
+                  break: options.break ?? (lineIndex !== 0 && itemIndex === line.length - 1 ? 1 : 0),
+                })
+                paragraphChildren.push(text)
               })
-              paragraphChildren.push(text)
             })
           }
           else if (type === "image") { // 图片类型
@@ -217,11 +225,14 @@ export class DocxBuilder {
             paragraphChildren.push(image)
           }
         })
-        const paragraph = new Paragraph({
-          ...options,
-          children: paragraphChildren,
-        })
-        fileChild.push(paragraph)
+        // 忽略空段落
+        if (paragraphChildren.length > 0) {
+          const paragraph = new Paragraph({
+            ...options,
+            children: paragraphChildren,
+          })
+          fileChild.push(paragraph)
+        }
       }
       else if (type === "emptyParagraph") { // 空段落类型
         const emptyParagraph = new Paragraph({
@@ -255,6 +266,69 @@ export class DocxBuilder {
       }
     })
     return fileChild
+  }
+
+  /**
+   * 解析文本，将包含 <sup> 和 <sub> 标签的文本解析为数组
+   * @param input 包含 <sup> 和 <sub> 标签的文本
+   * @returns 解析后的数组，每个元素为一个对象，包含 type（类型，"sup" 或 "sub"）和 value（值）属性
+   */
+  private parseText(input: string) {
+    const result = []
+    const lines = input.split("\n")
+
+    // 只需维护这一行：支持的内联标签
+    const inlineTags = ["sup", "sub", "strong", "b", "em", "i", "del", "s", "u"]
+
+    for (const line of lines) {
+      const matches = []
+
+      // 遍历每个标签，动态生成正则并匹配
+      for (const tag of inlineTags) {
+        const regex = new RegExp(`<${tag}>(.*?)</${tag}>`, "g")
+        for (const match of line.matchAll(regex)) {
+          matches.push({
+            type: tag,
+            value: match[1],
+            start: match.index,
+            end: match.index + match[0].length,
+          })
+        }
+      }
+
+      // 按出现位置排序
+      matches.sort((a, b) => a.start - b.start)
+
+      const parts = []
+      let lastIndex = 0
+
+      // 插入文本与标签片段
+      for (const m of matches) {
+        if (m.start > lastIndex) {
+          parts.push({
+            type: "text",
+            value: line.slice(lastIndex, m.start),
+          })
+        }
+        parts.push({
+          type: m.type,
+          value: m.value,
+        })
+        lastIndex = m.end
+      }
+
+      // 添加末尾剩余文本
+      if (lastIndex < line.length) {
+        parts.push({
+          type: "text",
+          value: line.slice(lastIndex),
+        })
+      }
+
+      result.push(parts)
+    }
+
+    return result
   }
 
   /**
