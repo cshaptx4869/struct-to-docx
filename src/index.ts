@@ -1,15 +1,4 @@
-import type {
-  FileChild,
-  IImageOptions,
-  IParagraphOptions,
-  IPropertiesOptions,
-  IRunOptions,
-  ISectionPropertiesOptions,
-  ITableCellOptions,
-  ITableOptions,
-  ITableRowOptions,
-  ParagraphChild,
-} from "docx"
+import type { FileChild, IImageOptions, IParagraphOptions, IPropertiesOptions, IRunOptions, ISectionPropertiesOptions, ITableCellOptions, ITableOptions, ITableRowOptions, ParagraphChild } from "docx"
 import { Document, Footer, Header, ImageRun, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx"
 
 /**
@@ -19,10 +8,17 @@ import { Document, Footer, Header, ImageRun, Packer, Paragraph, Table, TableCell
  * @link https://docx.js.org/
  */
 export class DocxBuilder {
+  private static count = 0
+  private id = ""
   private sections: ISection[] = []
   private properties: IDocumentProperties = {}
   private defaultFont = "Arial"
   private defaultFontSize: IFontSize = 10
+
+  constructor() {
+    this.id = `docx-builder${DocxBuilder.count}`
+    DocxBuilder.count++
+  }
 
   /**
    * 设置文档属性
@@ -354,14 +350,87 @@ export class DocxBuilder {
   renderHtml(data?: IData) {
     let html = ""
     this.sections.forEach((section, index) => {
+      html += `<div class="docx-builder-section" style="page-break-after: ${index === this.sections.length - 1 ? "auto" : "always"};">`
       // 页眉
-      html += `<div id="header-${index}">${this.renderHeadersHtml(section.headers, data)}</div>`
+      html += `<div class="docx-builder-header">${this.renderHeadersHtml(section.headers, data)}</div>`
       // 页面内容
-      html += `<div id="section-${index}" style="position: relative; page-break-after: ${index === this.sections.length - 1 ? "auto" : "always"};">${this.renderChildrenHtml(section.children, data)}</div>`
+      html += `<div class="docx-builder-body">${this.renderChildrenHtml(section.children, data)}</div>`
       // 页脚
-      html += `<div id="footer-${index}">${this.renderFootersHtml(section.footers, data)}</div>`
+      html += `<div class="docx-builder-footer">${this.renderFootersHtml(section.footers, data)}</div>`
+      html += `</div>`
     })
-    return `<div id="docx-builder" style="padding: 10px; background-color: #fff; overflow: auto;">${html}</div>`
+    this.injectStyle(`docx-builder-style`)
+    return `<div id="${this.id}">${html}</div>`
+  }
+
+  /**
+   * 注入样式
+   * @param id 样式ID
+   * @returns 样式元素
+   */
+  private injectStyle(id: string) {
+    let style = document.getElementById(id)
+    if (!style) {
+      style = document.createElement("style")
+      style.id = id
+      style.textContent = `
+        .docx-builder-section {
+          background-color: #fff;
+        }
+        .docx-builder-p {
+          margin: 0;
+        }
+        .docx-builder-table {
+          border-collapse: collapse;
+          width: 100%;
+        }
+        .docx-builder-td {
+          border: 1px solid #dddddd;
+          padding: 0 6px;
+        }
+        .docx-builder-input,
+        .docx-builder-textarea,
+        .docx-builder-select {
+          height: 32px;
+          line-height: 1.3;
+          border: 1px solid #eee;
+          background-color: #fff;
+          color: rgba(0, 0, 0, .85);
+          border-radius: 2px;
+          outline: 0;
+          transition: all .3s;
+          box-sizing: border-box;
+        }
+        .docx-builder-input:hover,
+        .docx-builder-textarea:hover,
+        .docx-builder-select:hover {
+          border-color: #d2d2d2;
+        }
+        .docx-builder-input:focus,
+        .docx-builder-textarea:focus,
+        .docx-builder-select:focus {
+          border-color: #409eff;
+          box-shadow: 0 0 0 3px rgba(22,183,119,.08);
+        }
+        .docx-builder-input {
+          padding-left: 10px;
+        }
+        .docx-builder-textarea {
+          min-height: 80px;
+          line-height: 20px;
+          padding: 6px 10px;
+          resize: vertical;
+        }
+        .docx-builder-select {
+          padding: 0 15px;
+          cursor: pointer;
+        }
+        .docx-builder-option {
+        }
+      `
+      document.head.appendChild(style)
+    }
+    return style
   }
 
   /**
@@ -376,13 +445,25 @@ export class DocxBuilder {
       const { type, options } = contentItem
       if (type === "paragraph") { // 段落类型
         let pHtml = ""
-        const pProps = `style="text-align:${options.alignment ?? "left"};"`
+        let pStyle = `style="`
+        if (options.spacing) {
+          if (options.spacing.before) {
+            pStyle += `padding-top: ${DocxBuilder.twipsToPx(options.spacing.before)}px;`
+          }
+          if (options.spacing.after) {
+            pStyle += `padding-bottom: ${DocxBuilder.twipsToPx(options.spacing.after)}px;`
+          }
+          if (options.spacing.line) {
+            pStyle += `line-height: ${options.spacing.line / 240};`
+          }
+        }
+        pStyle += `text-align:${options.alignment ?? "left"};"`
         // 内部元素
         options.children.forEach((inlineItem) => {
           const { type, options } = inlineItem
           if (type === "text") {
             // 文本类型
-            const spanProps = `style="font-size: ${options.size ?? DocxBuilder.textSize(this.defaultFontSize)}px; font-family: ${options.font ?? this.defaultFont}; color: ${options.color ? `#${options.color}` : "#000000"};"`
+            const spanStyle = `style="font-size: ${options.size ?? DocxBuilder.textSize(this.defaultFontSize)}px; font-family: ${options.font ?? this.defaultFont}; color: ${options.color ? `#${options.color}` : "#000000"};"`
             const breakTag = options.break ? "<br />".repeat(options.break) : ""
             if (options.htmlConfig) {
               // html 配置渲染
@@ -413,40 +494,40 @@ export class DocxBuilder {
               }
               if (name === "input") {
                 // 输入框
-                pHtml += `${breakTag}<input ${propsStr} name="${field}" value="${value}" />`
+                pHtml += `${breakTag}<input class="docx-builder-input" ${propsStr} name="${field}" value="${value}" />`
               }
               else if (name === "textarea") {
                 // 文本域
-                pHtml += `${breakTag}<textarea ${propsStr} name="${field}">${value}</textarea>`
+                pHtml += `${breakTag}<textarea class="docx-builder-textarea" ${propsStr} name="${field}">${value}</textarea>`
               }
               else if (name === "select") {
                 // 下拉选择框
                 let optionHtml = ""
                 if (props?.options) {
-                  optionHtml += props.options.map(item => `<option value="${item.value}" ${value === item.value ? "selected" : ""}>${item.label}</option>`).join("")
+                  optionHtml += props.options.map(item => `<option class="docx-builder-option" value="${item.value}" ${value === item.value ? "selected" : ""}>${item.label}</option>`).join("")
                 }
-                pHtml += `${breakTag}<select ${propsStr} name="${field}">${optionHtml}</select>`
+                pHtml += `${breakTag}<select class="docx-builder-select" ${propsStr} name="${field}">${optionHtml}</select>`
               }
               else {
                 // 普通文本
-                pHtml += `${breakTag}<span ${spanProps}>${value.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;").replace(/\n/g, "<br />")}</span>`
+                pHtml += `${breakTag}<span ${spanStyle}>${value.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;").replace(/\n/g, "<br />")}</span>`
               }
             }
             else {
               // 普通文本
-              pHtml += `${breakTag}<span ${spanProps}>${options.text ? options.text.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;").replace(/\n/g, "<br />") : ""}</span>`
+              pHtml += `${breakTag}<span ${spanStyle}>${options.text ? options.text.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;").replace(/\n/g, "<br />") : ""}</span>`
             }
           }
           else if (type === "image") {
             // 图片类型
             if (options.floating === undefined) {
-              const imgProps = `src="${options.data}" alt="${options.altText?.name ?? ""}" width="${options.transformation.width}px" height="${options.transformation.height}px"`
-              pHtml += `<img ${imgProps} />`
+              const imgAttrs = `src="${options.data}" alt="${options.altText?.name ?? ""}" width="${options.transformation.width}px" height="${options.transformation.height}px"`
+              pHtml += `<img ${imgAttrs} />`
             }
             // TODO 处理浮动图片
           }
         })
-        childrenHtml += `<p ${pProps}>${pHtml}</p>`
+        childrenHtml += `<p class="docx-builder-p" ${pStyle}>${pHtml}</p>`
       }
       else if (type === "emptyParagraph") {
         // 空段落类型
@@ -455,18 +536,17 @@ export class DocxBuilder {
       else if (type === "table") {
         // 表格类型
         let tableHtml = ""
-        const tableProps = `style="border-collapse: collapse; width: 100%;"`
         options.rows.forEach((rowItem) => {
-          const trProps = `${rowItem.cantSplit ? "style=\"page-break-inside: avoid;\"" : ""}`
-          let rowHtml = `<tr ${trProps}>`
+          const trStyle = `${rowItem.cantSplit ? "style=\"page-break-inside: avoid;\"" : ""}`
+          let rowHtml = `<tr ${trStyle}>`
           rowItem.children.forEach((tdItem) => {
-            const tdProps = `colspan="${tdItem.columnSpan ?? 1}" rowspan="${tdItem.rowSpan ?? 1}" style="border: 1px solid #dddddd; padding: 0 6px; min-width: ${tdItem.width?.size ? (typeof tdItem.width.size === "number" ? `${tdItem.width.size}cm` : tdItem.width.size) : "auto"};"`
-            rowHtml += `<td ${tdProps}>${this.renderChildrenHtml(tdItem.children, data)}</td>`
+            const tdAttrs = `colspan="${tdItem.columnSpan ?? 1}" rowspan="${tdItem.rowSpan ?? 1}" style="min-width: ${tdItem.width?.size ? (typeof tdItem.width.size === "number" ? `${tdItem.width.size}cm` : tdItem.width.size) : "auto"};"`
+            rowHtml += `<td class="docx-builder-td" ${tdAttrs}>${this.renderChildrenHtml(tdItem.children, data)}</td>`
           })
           rowHtml += "</tr>"
           tableHtml += rowHtml
         })
-        childrenHtml += `<table ${tableProps}>${tableHtml}</table>`
+        childrenHtml += `<table class="docx-builder-table">${tableHtml}</table>`
       }
     })
     return childrenHtml
@@ -505,7 +585,7 @@ export class DocxBuilder {
   private renderFootersHtml(footers?: ISection["footers"], data?: IData) {
     let html = ""
     if (!footers) {
-      return undefined
+      return html
     }
     const { default: defaultFooter, first: firstFooter, even: evenFooter } = footers
     if (defaultFooter) {
@@ -707,6 +787,15 @@ export class DocxBuilder {
    */
   static cmToPx(cm: number) {
     return Math.round(cm * 96 / 2.54)
+  }
+
+  /**
+   * 将twips转换为像素
+   * @param twips - twips值
+   * @returns 像素值
+   */
+  static twipsToPx(twips: number) {
+    return Math.round(twips * (96 / 1440))
   }
 }
 

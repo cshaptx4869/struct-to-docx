@@ -28,6 +28,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
+    "build:watch": "rollup -c -w",
     "clean": "rm -rf dist",
     "prepublish": "npm run clean && npm run build",
     "lint": "eslint . --fix",
