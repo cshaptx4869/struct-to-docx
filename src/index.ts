@@ -1,6 +1,8 @@
 import type { FileChild, IImageOptions, IParagraphOptions, IPropertiesOptions, IRunOptions, ISectionPropertiesOptions, ITableCellOptions, ITableOptions, ITableRowOptions, ParagraphChild } from "docx"
 import { Document, Footer, Header, ImageRun, Packer, Paragraph, Table, TableCell, TableRow, TextRun } from "docx"
 
+export { Packer } from "docx"
+
 /**
  * 文档构建器
  * @author cshaptx4869
