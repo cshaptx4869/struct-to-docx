@@ -365,76 +365,6 @@ export class DocxBuilder {
   }
 
   /**
-   * 注入样式
-   * @param id 样式ID
-   * @returns 样式元素
-   */
-  private injectStyle(id: string) {
-    let style = document.getElementById(id)
-    if (!style) {
-      style = document.createElement("style")
-      style.id = id
-      style.textContent = `
-        .docx-builder-section {
-          background-color: #fff;
-        }
-        .docx-builder-p {
-          margin: 0;
-        }
-        .docx-builder-table {
-          border-collapse: collapse;
-          width: 100%;
-        }
-        .docx-builder-td {
-          border: 1px solid #dddddd;
-          padding: 0 6px;
-        }
-        .docx-builder-input,
-        .docx-builder-textarea,
-        .docx-builder-select {
-          height: 32px;
-          line-height: 1.3;
-          border: 1px solid #eee;
-          background-color: #fff;
-          color: rgba(0, 0, 0, .85);
-          border-radius: 2px;
-          outline: 0;
-          transition: all .3s;
-          box-sizing: border-box;
-        }
-        .docx-builder-input:hover,
-        .docx-builder-textarea:hover,
-        .docx-builder-select:hover {
-          border-color: #d2d2d2;
-        }
-        .docx-builder-input:focus,
-        .docx-builder-textarea:focus,
-        .docx-builder-select:focus {
-          border-color: #409eff;
-          box-shadow: 0 0 0 3px rgba(22,183,119,.08);
-        }
-        .docx-builder-input {
-          padding-left: 10px;
-        }
-        .docx-builder-textarea {
-          min-height: 80px;
-          line-height: 20px;
-          padding: 6px 10px;
-          resize: vertical;
-        }
-        .docx-builder-select {
-          padding: 0 15px;
-          cursor: pointer;
-        }
-        .docx-builder-option {
-        }
-      `
-      document.head.appendChild(style)
-    }
-    return style
-  }
-
-  /**
    * 渲染段落HTML
    * @param children 段落内容数组
    * @param data 数据对象，用于替换模板中的变量
@@ -469,7 +399,7 @@ export class DocxBuilder {
             if (options.htmlConfig) {
               // html 配置渲染
               const { field, name, props } = options.htmlConfig
-              const propsStr = props ? Object.entries(props).map(([key, value]) => typeof value !== "object" ? `${key}="${value}"` : "").join(" ") : ""
+              const propsStr = props ? this.propsToHtmlAttrs(props) : ""
               let value = options.text ?? "" // 默认值，文本值
               // 赋值
               if (data) {
@@ -511,7 +441,7 @@ export class DocxBuilder {
               }
               else {
                 // 普通文本
-                pHtml += `${breakTag}<span ${spanStyle}>${value.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;").replace(/\n/g, "<br />")}</span>`
+                pHtml += `${breakTag}<span ${spanStyle} ${propsStr}>${value.replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;").replace(/\n/g, "<br />")}</span>`
               }
             }
             else {
@@ -599,6 +529,117 @@ export class DocxBuilder {
       html += `${this.renderChildrenHtml(evenFooter.children, data)}`
     }
     return html
+  }
+
+  /**
+   * 注入样式
+   * @param id 样式ID
+   * @returns 样式元素
+   */
+  private injectStyle(id: string) {
+    let style = document.getElementById(id)
+    if (!style) {
+      style = document.createElement("style")
+      style.id = id
+      style.textContent = `
+        .docx-builder-section {
+          background-color: #fff;
+        }
+        .docx-builder-p {
+          margin: 0;
+        }
+        .docx-builder-table {
+          border-collapse: collapse;
+          width: 100%;
+        }
+        .docx-builder-td {
+          border: 1px solid #dddddd;
+          padding: 0 6px;
+        }
+        .docx-builder-input,
+        .docx-builder-textarea,
+        .docx-builder-select {
+          height: 32px;
+          line-height: 1.3;
+          border: 1px solid #eee;
+          background-color: #fff;
+          color: rgba(0, 0, 0, .85);
+          border-radius: 2px;
+          outline: 0;
+          transition: all .3s;
+          box-sizing: border-box;
+        }
+        .docx-builder-input:hover,
+        .docx-builder-textarea:hover,
+        .docx-builder-select:hover {
+          border-color: #d2d2d2;
+        }
+        .docx-builder-input:focus,
+        .docx-builder-textarea:focus,
+        .docx-builder-select:focus {
+          border-color: #409eff;
+          box-shadow: 0 0 0 3px rgba(22,183,119,.08);
+        }
+        .docx-builder-input {
+          padding-left: 10px;
+        }
+        .docx-builder-textarea {
+          min-height: 80px;
+          line-height: 20px;
+          padding: 6px 10px;
+          resize: vertical;
+        }
+        .docx-builder-select {
+          padding: 0 15px;
+          cursor: pointer;
+        }
+        .docx-builder-option {
+        }
+      `
+      document.head.appendChild(style)
+    }
+    return style
+  }
+
+  /**
+   * 将属性对象转换为 HTML 属性字符串
+   * @param props 属性对象，键为属性名，值为属性值
+   * @returns HTML 属性字符串
+   */
+  private propsToHtmlAttrs(props: Record<string, any>) {
+    const attrs: string[] = []
+
+    for (const [key, value] of Object.entries(props)) {
+      if (value == null) continue // 忽略 null 和 undefined
+
+      if (key === "style" && typeof value === "object") {
+        // 处理 style 对象 → 转成 CSS 字符串
+        const styleStr = Object.entries(value)
+          .map(([k, v]) => {
+            if (v == null) return ""
+            // 驼峰转中划线：backgroundColor → background-color
+            const kebabK = k.replace(/([A-Z])/g, "-$1").toLowerCase()
+            return `${kebabK}: ${v}`
+          })
+          .filter(Boolean)
+          .join("; ")
+        if (styleStr) {
+          attrs.push(`style="${styleStr.replace(/"/g, "&quot;")}"`)
+        }
+      }
+      else if (typeof value === "object") {
+        // 其他对象？按需处理：可以跳过、报错、或转 JSON（不推荐用于原生 HTML）
+        // 这里选择跳过（或你可改成 console.warn）
+        continue
+      }
+      else {
+        // 普通属性：字符串、数字、boolean 等
+        const escapedValue = String(value).replace(/"/g, "&quot;")
+        attrs.push(`${key}="${escapedValue}"`)
+      }
+    }
+
+    return attrs.join(" ")
   }
 
   /**

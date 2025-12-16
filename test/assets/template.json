@@ -210,7 +210,10 @@
                   "type": "text",
                   "placeholder": "请输入副标题",
                   "required": "",
-                  "style": "width: 50%; margin-top: 6px;"
+                  "style": {
+                    "width": "50%",
+                    "marginTop": "6px"
+                  }
                 }
               },
               "size": 24
