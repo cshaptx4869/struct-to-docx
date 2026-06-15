@@ -104,7 +104,9 @@
                     "props": {
                       "type": "text",
                       "required": "",
-                      "placeholder": "请输入版本号"
+                      "placeholder": "请输入版本号",
+                      "pattern": "^\\d{2}$",
+                      "title": "2位有效数字"
                     }
                   },
                   "size": 18
