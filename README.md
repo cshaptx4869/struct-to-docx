@@ -41,8 +41,10 @@
 大概的包含关系：
 
 - 段落子集：文本、图片
-  - 文本通过 `htmlConfig` 配置，定义渲染的 HTML 元素（默认为 `span`）
-  - 文本通过 `field` 或者 `htmlConfig` 下的 `field` 配置，埋点字段
+  - 文本
+    - 通过 `htmlConfig` 配置，定义渲染的 HTML 元素（默认为 `span`）
+    - 通过 `field` 或者 `htmlConfig` 下的 `field` 配置，埋点字段
+    - 对于 docx 文档，值使用 `\n` 符号来换行，还支持 `strong`、`b`、`em`、`i`、`u`、`del`、`s`、`sub`、`sup` 标签（等同于 `blod`、`italics`、`underline`、`strike`、`subScript`、`superScript` 配置）
 - 表格行子集：表格单元格
 - 表格单元格子集：段落
 
